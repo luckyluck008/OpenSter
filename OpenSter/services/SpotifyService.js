@@ -1,5 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import axios from 'axios';
+import { encode as btoa } from 'base-64';
 
 class SpotifyService {
   constructor() {
@@ -10,33 +12,38 @@ class SpotifyService {
 
   async initialize() {
     this.clientId = await AsyncStorage.getItem('spotifyClientId');
-    this.clientSecret = await AsyncStorage.getItem('spotifyClientSecret');
+    this.clientSecret = await SecureStore.getItemAsync('spotifyClientSecret');
   }
 
   async authenticate() {
     if (!this.clientId || !this.clientSecret) {
+      console.log('Missing credentials - clientId:', !!this.clientId, 'clientSecret:', !!this.clientSecret);
       throw new Error('Spotify credentials not configured');
     }
 
+    console.log('Authenticating with Spotify... clientId:', this.clientId.substring(0, 8) + '...');
+
     try {
       // Get access token using client credentials flow
+      const authString = `${this.clientId}:${this.clientSecret}`;
+      const base64Auth = btoa(authString);
+      
       const tokenResponse = await axios.post(
         'https://accounts.spotify.com/api/token',
-        new URLSearchParams({
-          grant_type: 'client_credentials',
-        }),
+        'grant_type=client_credentials',
         {
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
-            Authorization: `Basic ${btoa(`${this.clientId}:${this.clientSecret}`)}`,
+            Authorization: `Basic ${base64Auth}`,
           },
         }
       );
 
       this.token = tokenResponse.data.access_token;
+      console.log('Got Spotify token successfully!');
       return this.token;
     } catch (error) {
-      console.error('Error authenticating with Spotify:', error);
+      console.error('Error authenticating with Spotify:', error.response?.data || error.message);
       throw error;
     }
   }
@@ -68,7 +75,7 @@ class SpotifyService {
             params: {
               limit,
               offset,
-              fields: 'items(track(name,artists,album)),total,next',
+              fields: 'items(track(id,name,artists,album)),total,next',
             },
           }
         );
@@ -99,23 +106,29 @@ class SpotifyService {
 
   // Extract playlist ID from a Spotify playlist URL
   extractPlaylistId(url) {
+    // Clean the URL first - remove query parameters
+    const cleanUrl = url.split('?')[0].trim();
+    
     // Handle various Spotify URL formats
     const patterns = [
       /spotify\.com\/playlist\/([a-zA-Z0-9]+)/,
       /spotify\.com\/embed\/playlist\/([a-zA-Z0-9]+)/,
       /open\.spotify\.com\/playlist\/([a-zA-Z0-9]+)/,
+      /spotify:playlist:([a-zA-Z0-9]+)/,
     ];
 
     for (const pattern of patterns) {
-      const match = url.match(pattern);
+      const match = cleanUrl.match(pattern);
       if (match) {
+        console.log('Extracted playlist ID:', match[1]);
         return match[1];
       }
     }
 
-    // If it's just the ID
-    if (url.length >= 10 && /^[a-zA-Z0-9]+$/.test(url)) {
-      return url;
+    // If it's just the ID (22 characters alphanumeric)
+    if (/^[a-zA-Z0-9]{22}$/.test(cleanUrl)) {
+      console.log('Using direct playlist ID:', cleanUrl);
+      return cleanUrl;
     }
 
     throw new Error('Invalid Spotify playlist URL');
@@ -126,6 +139,9 @@ class SpotifyService {
     try {
       await this.initialize();
       const token = await this.getAccessToken();
+
+      console.log('Validating playlist ID:', playlistId);
+      console.log('Using token:', token.substring(0, 20) + '...');
 
       const response = await axios.get(
         `https://api.spotify.com/v1/playlists/${playlistId}`,
@@ -139,6 +155,8 @@ class SpotifyService {
         }
       );
 
+      console.log('Playlist found:', response.data.name);
+
       return {
         id: response.data.id,
         name: response.data.name,
@@ -146,7 +164,8 @@ class SpotifyService {
         trackCount: response.data.tracks.total,
       };
     } catch (error) {
-      console.error('Error validating playlist:', error);
+      console.error('Validate playlist error - Status:', error.response?.status);
+      console.error('Validate playlist error - Data:', error.response?.data);
       throw error;
     }
   }

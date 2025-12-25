@@ -3,27 +3,41 @@
     "name": "OpenSter",
     "slug": "OpenSter",
     "version": "1.0.0",
+    "scheme": "openster",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "userInterfaceStyle": "dark",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#121212"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.openster.app",
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": [
+          "spotify"
+        ]
+      }
     },
     "android": {
+      "package": "com.openster.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "edgeToEdgeEnabled": true
+        "backgroundColor": "#121212"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-web-browser"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "506f8282-3032-49cd-be8a-4698c8feff32"
+      }
     }
   }
 }

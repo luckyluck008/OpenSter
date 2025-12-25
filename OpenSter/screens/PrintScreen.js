@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  Button,
   StyleSheet,
   Alert,
   ActivityIndicator,
   TouchableOpacity,
   ScrollView
 } from 'react-native';
-import { generateCardsPDF, PDFPreview } from '../components/PDFGenerator';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { generateCardsPDF } from '../components/PDFGenerator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const PrintScreen = ({ navigation, route }) => {
@@ -44,7 +44,6 @@ const PrintScreen = ({ navigation, route }) => {
     setIsGenerating(true);
     try {
       await generateCardsPDF(tracks);
-      Alert.alert('Erfolg', 'PDF erfolgreich generiert und gespeichert!');
     } catch (error) {
       console.error('Fehler bei der PDF-Generierung:', error);
       Alert.alert('Fehler', 'Fehler bei der PDF-Generierung: ' + error.message);
@@ -55,62 +54,82 @@ const PrintScreen = ({ navigation, route }) => {
 
   if (!loaded) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#8a2be2" />
-        <Text>Lade Daten...</Text>
-      </View>
+      <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#8a2be2" />
+          <Text style={styles.loadingText}>Lade Daten...</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Spielkarten drucken</Text>
-        
-        <View style={styles.infoBox}>
-          <Text style={styles.infoText}>Anzahl der Songs: {tracks.length}</Text>
-          <Text style={styles.infoText}>Karten pro A4-Seite: 9 (3x3 Grid)</Text>
-          <Text style={styles.infoText}>Format: Vorderseite mit Lösung, Rückseite mit QR-Code</Text>
+    <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.statsCard}>
+          <View style={styles.statRow}>
+            <Text style={styles.statLabel}>Songs</Text>
+            <Text style={styles.statValue}>{tracks.length}</Text>
+          </View>
+          <View style={styles.statRow}>
+            <Text style={styles.statLabel}>Seiten (A4)</Text>
+            <Text style={styles.statValue}>{Math.ceil(tracks.length / 9)}</Text>
+          </View>
+          <View style={styles.statRow}>
+            <Text style={styles.statLabel}>Karten pro Seite</Text>
+            <Text style={styles.statValue}>9</Text>
+          </View>
         </View>
 
-        {/* Vorschau der ersten paar Karten */}
-        <View style={styles.previewSection}>
-          <Text style={styles.previewTitle}>Karten-Vorschau</Text>
-          {tracks.slice(0, 9).map((track, index) => (
+        <Text style={styles.sectionTitle}>Vorschau</Text>
+        
+        <View style={styles.previewGrid}>
+          {tracks.slice(0, 6).map((track, index) => (
             <View key={index} style={styles.cardPreview}>
-              <Text style={styles.artist}>{track.artist}</Text>
-              <Text style={styles.year}>{track.year}</Text>
-              <Text style={styles.titleText}>{track.title}</Text>
-              <Text style={styles.qrCode}>QR: os:sp:{track.id || 'unknown'}</Text>
+              <Text style={styles.cardArtist} numberOfLines={1}>{track.artist}</Text>
+              <Text style={styles.cardYear}>{track.originalYear || '----'}</Text>
+              <Text style={styles.cardTitle} numberOfLines={1}>{track.name}</Text>
             </View>
           ))}
-          {tracks.length === 0 && (
-            <Text style={styles.noDataText}>Keine Musikdaten zum Anzeigen</Text>
-          )}
         </View>
+        
+        {tracks.length > 6 && (
+          <Text style={styles.moreText}>+{tracks.length - 6} weitere Karten</Text>
+        )}
+
+        {tracks.length === 0 && (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyText}>Keine Tracks geladen</Text>
+            <Text style={styles.emptyHint}>Importiere zuerst eine Playlist</Text>
+          </View>
+        )}
 
         <TouchableOpacity 
-          style={[styles.generateButton, isGenerating && styles.disabledButton]} 
+          style={[styles.generateButton, isGenerating && styles.buttonDisabled]} 
           onPress={handleGeneratePDF}
-          disabled={isGenerating}
+          disabled={isGenerating || tracks.length === 0}
+          activeOpacity={0.8}
         >
           {isGenerating ? (
-            <View style={styles.buttonContent}>
+            <View style={styles.loadingRow}>
               <ActivityIndicator size="small" color="#fff" />
-              <Text style={styles.buttonText}>Generiere...</Text>
+              <Text style={styles.buttonText}>Generiere PDF...</Text>
             </View>
           ) : (
-            <Text style={styles.buttonText}>PDF generieren</Text>
+            <Text style={styles.buttonText}>📄 PDF generieren</Text>
           )}
         </TouchableOpacity>
-
-        <Button
-          title="Zurück zur Übersicht"
-          onPress={() => navigation.goBack()}
-          color="#8a2be2"
-        />
-      </View>
-    </ScrollView>
+        
+        <Text style={styles.hintText}>
+          Das PDF enthält Vorder- und Rückseiten.{'\n'}
+          Für doppelseitigen Druck verwenden.
+        </Text>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
@@ -119,93 +138,122 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#121212',
   },
-  content: {
-    padding: 20,
+  scrollView: {
+    flex: 1,
   },
-  centerContainer: {
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 32,
+  },
+  loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#121212',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    textAlign: 'center',
-    marginBottom: 20,
-    color: '#8a2be2', // Neon-Violett
+  loadingText: {
+    color: '#999',
+    marginTop: 12,
+    fontSize: 14,
   },
-  infoBox: {
+  statsCard: {
     backgroundColor: '#1e1e1e',
-    padding: 15,
-    borderRadius: 8,
+    borderRadius: 12,
+    padding: 16,
     marginBottom: 20,
-  },
-  infoText: {
-    color: '#fff',
-    marginBottom: 5,
-    fontSize: 16,
-  },
-  previewSection: {
-    marginBottom: 20,
-  },
-  previewTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 10,
-    color: '#00ced1', // Neon-Cyan
-  },
-  cardPreview: {
-    backgroundColor: '#1e1e1e',
-    padding: 10,
-    marginVertical: 5,
-    borderRadius: 5,
     borderWidth: 1,
     borderColor: '#333',
   },
-  artist: {
+  statRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  statLabel: {
+    color: '#999',
+    fontSize: 14,
+  },
+  statValue: {
+    color: '#8a2be2',
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#fff',
-    textAlign: 'center',
   },
-  year: {
-    fontSize: 20,
+  sectionTitle: {
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#8a2be2', // Neon-Violett
-    textAlign: 'center',
-    marginVertical: 5,
+    color: '#fff',
+    marginBottom: 12,
   },
-  titleText: {
-    fontSize: 12,
-    color: '#ccc',
-    textAlign: 'center',
+  previewGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -4,
+    marginBottom: 12,
   },
-  qrCode: {
+  cardPreview: {
+    width: '31%',
+    aspectRatio: 0.7,
+    backgroundColor: '#1e1e1e',
+    borderRadius: 8,
+    padding: 8,
+    margin: '1%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  cardArtist: {
+    color: '#999',
     fontSize: 10,
-    color: '#aaa',
     textAlign: 'center',
-    marginTop: 5,
-    fontStyle: 'italic',
+    marginBottom: 4,
   },
-  noDataText: {
-    color: '#666',
+  cardYear: {
+    color: '#8a2be2',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  cardTitle: {
+    color: '#fff',
+    fontSize: 9,
     textAlign: 'center',
-    fontStyle: 'italic',
+  },
+  moreText: {
+    color: '#666',
+    fontSize: 13,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  emptyState: {
+    backgroundColor: '#1e1e1e',
+    borderRadius: 12,
+    padding: 32,
+    alignItems: 'center',
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  emptyText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  emptyHint: {
+    color: '#666',
+    fontSize: 14,
   },
   generateButton: {
-    backgroundColor: '#8a2be2', // Neon-Violett
-    padding: 15,
-    borderRadius: 8,
+    backgroundColor: '#8a2be2',
+    padding: 16,
+    borderRadius: 10,
     alignItems: 'center',
-    marginVertical: 10,
+    marginTop: 8,
   },
-  disabledButton: {
-    backgroundColor: '#555',
+  buttonDisabled: {
+    opacity: 0.7,
   },
-  buttonContent: {
+  loadingRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -213,6 +261,14 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  hintText: {
+    color: '#666',
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 12,
+    lineHeight: 18,
   },
 });
 

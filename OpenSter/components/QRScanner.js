@@ -1,53 +1,98 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Alert, Button, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 
-// Mock-Komponente für den QR-Scanner, da die Installation von expo-camera Probleme bereitet
 const QRScanner = ({ onScan, onCancel }) => {
-  const [scanning, setScanning] = useState(true);
-  const [mockCameraActive, setMockCameraActive] = useState(false);
+  const [permission, requestPermission] = useCameraPermissions();
+  const [scanned, setScanned] = useState(false);
+  const hasScannedRef = useRef(false);
 
-  // Simuliere das Scannen nach einer Verzögerung
   useEffect(() => {
-    if (scanning) {
-      const scanTimeout = setTimeout(() => {
-        // Simuliere das Finden eines QR-Codes
-        const mockQRCode = 'os:sp:4uLU6hMCjMI75M1A2tKUQ3'; // Beispiel Spotify Track ID
-        onScan({ data: mockQRCode });
-      }, 3000); // Scanning nach 3 Sekunden
-
-      return () => clearTimeout(scanTimeout);
+    if (!permission?.granted) {
+      requestPermission();
     }
-  }, [scanning]);
+    // Reset beim Mounten
+    hasScannedRef.current = false;
+    return () => {
+      hasScannedRef.current = true; // Verhindere Scans beim Unmounten
+    };
+  }, []);
 
-  const handleCancel = () => {
-    setScanning(false);
-    onCancel();
+  const handleBarCodeScanned = ({ type, data }) => {
+    // Doppelte Absicherung: State UND Ref
+    if (scanned || hasScannedRef.current) return;
+    
+    hasScannedRef.current = true;
+    setScanned(true);
+    
+    console.log('QR Code gescannt (einmalig):', data);
+    onScan({ data });
   };
 
-  return (
-    <View style={styles.container}>
-      <View style={styles.scannerContainer}>
-        <View style={styles.scanArea}>
-          <Text style={styles.scanText}>QR-Code scannen</Text>
-          <View style={styles.scanFrame} />
-          {mockCameraActive && <View style={styles.cameraMock} />}
-        </View>
+  if (!permission) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.message}>Lade Kamera...</Text>
       </View>
-      
-      <View style={styles.infoSection}>
-        <Text style={styles.infoText}>
-          Halten Sie die Kamera über den QR-Code auf der Rückseite der Spielkarte.
-        </Text>
-        <Text style={styles.infoText}>
-          Der Code sollte mit "os:sp:" beginnen.
-        </Text>
-      </View>
+    );
+  }
 
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
+  if (!permission.granted) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.message}>Kamera-Zugriff erforderlich</Text>
+        <Text style={styles.subMessage}>
+          Bitte erlaube den Kamera-Zugriff, um QR-Codes zu scannen.
+        </Text>
+        <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
+          <Text style={styles.permissionButtonText}>Zugriff erlauben</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
           <Text style={styles.cancelButtonText}>Abbrechen</Text>
         </TouchableOpacity>
       </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <CameraView
+        style={styles.camera}
+        facing="back"
+        barcodeScannerSettings={{
+          barcodeTypes: ['qr'],
+        }}
+        onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+      >
+        <View style={styles.overlay}>
+          <View style={styles.scanArea}>
+            <View style={styles.cornerTL} />
+            <View style={styles.cornerTR} />
+            <View style={styles.cornerBL} />
+            <View style={styles.cornerBR} />
+          </View>
+        </View>
+        
+        <View style={styles.infoContainer}>
+          <Text style={styles.infoText}>
+            QR-Code der Spielkarte scannen
+          </Text>
+        </View>
+
+        <View style={styles.buttonContainer}>
+          {scanned && (
+            <TouchableOpacity
+              style={styles.rescanButton}
+              onPress={() => setScanned(false)}
+            >
+              <Text style={styles.rescanButtonText}>Erneut scannen</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
+            <Text style={styles.cancelButtonText}>Abbrechen</Text>
+          </TouchableOpacity>
+        </View>
+      </CameraView>
     </View>
   );
 };
@@ -56,70 +101,133 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#121212',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  scannerContainer: {
+  camera: {
+    flex: 1,
+    width: '100%',
+  },
+  overlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
   },
   scanArea: {
-    width: '100%',
-    aspectRatio: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  scanText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  scanFrame: {
     width: 250,
     height: 250,
-    borderWidth: 2,
-    borderColor: '#00ced1', // Neon-Cyan
-    borderStyle: 'dashed',
+    position: 'relative',
+  },
+  cornerTL: {
     position: 'absolute',
     top: 0,
     left: 0,
+    width: 40,
+    height: 40,
+    borderTopWidth: 4,
+    borderLeftWidth: 4,
+    borderColor: '#8a2be2',
+  },
+  cornerTR: {
+    position: 'absolute',
+    top: 0,
     right: 0,
+    width: 40,
+    height: 40,
+    borderTopWidth: 4,
+    borderRightWidth: 4,
+    borderColor: '#8a2be2',
+  },
+  cornerBL: {
+    position: 'absolute',
     bottom: 0,
-    margin: 'auto',
+    left: 0,
+    width: 40,
+    height: 40,
+    borderBottomWidth: 4,
+    borderLeftWidth: 4,
+    borderColor: '#8a2be2',
   },
-  cameraMock: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  cornerBR: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 40,
+    height: 40,
+    borderBottomWidth: 4,
+    borderRightWidth: 4,
+    borderColor: '#8a2be2',
   },
-  infoSection: {
-    padding: 20,
+  infoContainer: {
+    position: 'absolute',
+    top: 80,
+    left: 0,
+    right: 0,
     alignItems: 'center',
   },
   infoText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 10,
-    lineHeight: 24,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
   },
   buttonContainer: {
-    padding: 20,
+    position: 'absolute',
+    bottom: 50,
+    left: 0,
+    right: 0,
     alignItems: 'center',
   },
   cancelButton: {
-    backgroundColor: '#ff4b5c', // Rot
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 30,
+    paddingVertical: 15,
+    borderRadius: 10,
+    marginTop: 10,
   },
   cancelButtonText: {
     color: '#fff',
     fontSize: 16,
+    fontWeight: '600',
+  },
+  rescanButton: {
+    backgroundColor: '#8a2be2',
+    paddingHorizontal: 30,
+    paddingVertical: 15,
+    borderRadius: 10,
+  },
+  rescanButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  permissionButton: {
+    backgroundColor: '#8a2be2',
+    paddingHorizontal: 30,
+    paddingVertical: 15,
+    borderRadius: 10,
+    marginTop: 20,
+  },
+  permissionButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  message: {
+    color: '#fff',
+    fontSize: 18,
     fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  subMessage: {
+    color: '#999',
+    fontSize: 14,
+    textAlign: 'center',
+    paddingHorizontal: 40,
   },
 });
 

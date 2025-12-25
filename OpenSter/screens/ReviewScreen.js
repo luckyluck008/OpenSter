@@ -5,11 +5,10 @@ import {
   TextInput,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
   Alert,
-  SafeAreaView,
   FlatList,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ReviewScreen = ({ route, navigation }) => {
@@ -27,10 +26,8 @@ const ReviewScreen = ({ route, navigation }) => {
   };
 
   const handleGenerateCards = async () => {
-    // Speichere die bearbeiteten Tracks in AsyncStorage
     try {
       await AsyncStorage.setItem('selectedTracks', JSON.stringify(editedTracks));
-      // Navigiere zum Druckbildschirm
       navigation.navigate('Print', { 
         playlistInfo, 
         tracks: editedTracks 
@@ -44,57 +41,56 @@ const ReviewScreen = ({ route, navigation }) => {
   const renderTrackItem = ({ item, index }) => (
     <View style={styles.trackItem}>
       <View style={styles.trackHeader}>
-        <Text style={styles.trackNumber}>{index + 1}.</Text>
-        <View style={styles.trackInfo}>
-          <Text style={styles.trackTitle}>{item.name}</Text>
-          <Text style={styles.trackArtist}>{item.artist}</Text>
+        <View style={styles.trackNumber}>
+          <Text style={styles.trackNumberText}>{index + 1}</Text>
         </View>
+        <View style={styles.trackInfo}>
+          <Text style={styles.trackTitle} numberOfLines={1}>{item.name}</Text>
+          <Text style={styles.trackArtist} numberOfLines={1}>{item.artist}</Text>
+        </View>
+        <TouchableOpacity 
+          style={styles.editToggle}
+          onPress={() => setEditingTrackIndex(editingTrackIndex === index ? null : index)}
+        >
+          <Text style={styles.editToggleText}>
+            {editingTrackIndex === index ? '✓' : '✎'}
+          </Text>
+        </TouchableOpacity>
       </View>
       
-      <View style={styles.trackDetails}>
-        <Text style={styles.detailLabel}>Original Year:</Text>
+      <View style={styles.yearRow}>
+        <Text style={styles.yearLabel}>Jahr:</Text>
         <TextInput
           style={styles.yearInput}
           value={item.originalYear ? item.originalYear.toString() : ''}
           onChangeText={(value) => updateTrack(index, 'originalYear', value ? parseInt(value) : null)}
-          placeholder="Year"
+          placeholder="----"
+          placeholderTextColor="#666"
           keyboardType="numeric"
           maxLength={4}
         />
       </View>
       
-      <View style={styles.trackEdit}>
-        <TouchableOpacity 
-          style={styles.editButton}
-          onPress={() => {
-            setEditingTrackIndex(editingTrackIndex === index ? null : index);
-          }}
-        >
-          <Text style={styles.editButtonText}>
-            {editingTrackIndex === index ? 'Hide' : 'Edit'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-      
       {editingTrackIndex === index && (
         <View style={styles.editSection}>
           <View style={styles.editField}>
-            <Text style={styles.editLabel}>Title:</Text>
+            <Text style={styles.editLabel}>Titel:</Text>
             <TextInput
               style={styles.editInput}
               value={item.name}
               onChangeText={(value) => updateTrack(index, 'name', value)}
-              placeholder="Track title"
+              placeholder="Track Titel"
+              placeholderTextColor="#666"
             />
           </View>
-          
           <View style={styles.editField}>
-            <Text style={styles.editLabel}>Artist:</Text>
+            <Text style={styles.editLabel}>Künstler:</Text>
             <TextInput
               style={styles.editInput}
               value={item.artist}
               onChangeText={(value) => updateTrack(index, 'artist', value)}
-              placeholder="Artist name"
+              placeholder="Künstlername"
+              placeholderTextColor="#666"
             />
           </View>
         </View>
@@ -103,11 +99,10 @@ const ReviewScreen = ({ route, navigation }) => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
       <View style={styles.header}>
-        <Text style={styles.title}>{playlistInfo.name}</Text>
-        <Text style={styles.subtitle}>by {playlistInfo.owner}</Text>
-        <Text style={styles.trackCount}>{tracks.length} tracks</Text>
+        <Text style={styles.playlistName} numberOfLines={1}>{playlistInfo.name}</Text>
+        <Text style={styles.trackCount}>{tracks.length} Tracks</Text>
       </View>
       
       <FlatList
@@ -122,8 +117,9 @@ const ReviewScreen = ({ route, navigation }) => {
         <TouchableOpacity 
           style={styles.generateButton} 
           onPress={handleGenerateCards}
+          activeOpacity={0.8}
         >
-          <Text style={styles.generateButtonText}>Generate Cards</Text>
+          <Text style={styles.generateButtonText}>🎴 Karten generieren</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -133,136 +129,138 @@ const ReviewScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0d1117',
+    backgroundColor: '#121212',
   },
   header: {
-    padding: 20,
-    backgroundColor: '#161b22',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#30363d',
+    borderBottomColor: '#333',
   },
-  title: {
-    fontSize: 20,
+  playlistName: {
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#c9d1d9',
-    marginBottom: 5,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#8b949e',
-    marginBottom: 5,
+    color: '#fff',
+    marginBottom: 2,
   },
   trackCount: {
-    fontSize: 14,
-    color: '#58a6ff',
+    fontSize: 13,
+    color: '#8a2be2',
   },
   listContainer: {
-    padding: 10,
+    padding: 12,
   },
   trackItem: {
-    backgroundColor: '#161b22',
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 10,
+    backgroundColor: '#1e1e1e',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#30363d',
+    borderColor: '#333',
   },
   trackHeader: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 10,
+    alignItems: 'center',
+    marginBottom: 8,
   },
   trackNumber: {
-    fontSize: 16,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#333',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  trackNumberText: {
+    color: '#8a2be2',
+    fontSize: 12,
     fontWeight: 'bold',
-    color: '#58a6ff',
-    width: 25,
   },
   trackInfo: {
     flex: 1,
   },
   trackTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
-    color: '#c9d1d9',
-    marginBottom: 5,
+    color: '#fff',
+    marginBottom: 2,
   },
   trackArtist: {
-    fontSize: 14,
-    color: '#8b949e',
+    fontSize: 13,
+    color: '#999',
   },
-  trackDetails: {
+  editToggle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#333',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  editToggleText: {
+    color: '#8a2be2',
+    fontSize: 16,
+  },
+  yearRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
   },
-  detailLabel: {
-    fontSize: 14,
-    color: '#c9d1d9',
-    marginRight: 10,
+  yearLabel: {
+    color: '#999',
+    fontSize: 13,
+    marginRight: 8,
   },
   yearInput: {
     borderWidth: 1,
-    borderColor: '#30363d',
-    backgroundColor: '#0d1117',
-    color: '#c9d1d9',
-    padding: 8,
-    borderRadius: 4,
-    width: 80,
-    fontSize: 14,
-  },
-  trackEdit: {
-    alignItems: 'flex-end',
-  },
-  editButton: {
-    backgroundColor: '#238636',
+    borderColor: '#333',
+    backgroundColor: '#2a2a2a',
+    color: '#8a2be2',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 4,
-  },
-  editButtonText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '600',
+    borderRadius: 6,
+    width: 70,
+    fontSize: 14,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
   editSection: {
     marginTop: 10,
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: '#30363d',
+    borderTopColor: '#333',
   },
   editField: {
-    marginBottom: 10,
+    marginBottom: 8,
   },
   editLabel: {
-    fontSize: 14,
-    color: '#c9d1d9',
-    marginBottom: 5,
+    fontSize: 12,
+    color: '#999',
+    marginBottom: 4,
   },
   editInput: {
     borderWidth: 1,
-    borderColor: '#30363d',
-    backgroundColor: '#0d1117',
-    color: '#c9d1d9',
-    padding: 8,
-    borderRadius: 4,
+    borderColor: '#333',
+    backgroundColor: '#2a2a2a',
+    color: '#fff',
+    padding: 10,
+    borderRadius: 6,
     fontSize: 14,
   },
   footer: {
-    padding: 20,
-    backgroundColor: '#161b22',
+    padding: 16,
     borderTopWidth: 1,
-    borderTopColor: '#30363d',
+    borderTopColor: '#333',
   },
   generateButton: {
-    backgroundColor: '#58a6ff',
-    padding: 15,
-    borderRadius: 8,
+    backgroundColor: '#8a2be2',
+    padding: 16,
+    borderRadius: 10,
     alignItems: 'center',
   },
   generateButtonText: {
-    color: '#0d1117',
-    fontSize: 18,
+    color: '#fff',
+    fontSize: 16,
     fontWeight: 'bold',
   },
 });
