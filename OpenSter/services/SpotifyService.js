@@ -204,6 +204,8 @@ class SpotifyService {
           albumImage: track.album.images[0]?.url || null,
           duration: track.duration_ms,
           popularity: track.popularity,
+          release_date: track.album?.release_date || null,
+          release_date_precision: track.album?.release_date_precision || null,
         }));
 
         allTracksInfo.push(...tracks);

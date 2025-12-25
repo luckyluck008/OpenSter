@@ -47,7 +47,7 @@ export const generateCardsPDF = async (tracks) => {
       qrCodes.push(qr);
     }
 
-    const tracksPerPage = 9;
+    const tracksPerPage = 12;
     const totalPages = Math.ceil(tracks.length / tracksPerPage);
     
     let html = `
@@ -68,7 +68,7 @@ export const generateCardsPDF = async (tracks) => {
         .card-grid {
           display: grid;
           grid-template-columns: repeat(3, 50mm);
-          grid-template-rows: repeat(3, 50mm);
+          grid-template-rows: repeat(4, 50mm);
           gap: 3mm;
         }
         .card-front {
@@ -106,13 +106,13 @@ export const generateCardsPDF = async (tracks) => {
           border-radius: 3mm;
         }
         .artist {
-          font-size: 7pt;
+          font-size: 11pt;
           font-weight: bold;
           color: #000;
           margin-bottom: 1mm;
           text-transform: uppercase;
           letter-spacing: 0.3px;
-          max-height: 10mm;
+          max-height: 14mm;
           overflow: hidden;
           line-height: 1.2;
         }
@@ -123,12 +123,12 @@ export const generateCardsPDF = async (tracks) => {
           margin: 2mm 0;
         }
         .title {
-          font-size: 6pt;
+          font-size: 10pt;
           color: #000;
-          max-height: 10mm;
+          max-height: 14mm;
           overflow: hidden;
-          line-height: 1.3;
-          font-weight: 500;
+          line-height: 1.2;
+          font-weight: 600;
         }
         .qr-container {
           width: 22mm;
@@ -150,7 +150,7 @@ export const generateCardsPDF = async (tracks) => {
           text-align: center;
         }
         .logo {
-          font-size: 8pt;
+          font-size: 9pt;
           font-weight: bold;
           color: #8a2be2;
           margin-top: 2mm;

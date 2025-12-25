@@ -61,14 +61,39 @@ const ImportScreen = ({ navigation }) => {
       
       const enhancedTracks = [];
       
+      // Use Spotify API to fetch release dates for imported tracks (faster and often more accurate)
+      const trackIds = tracks.map(t => t.id).filter(Boolean);
+      let tracksInfoMap = {};
+      if (trackIds.length > 0) {
+        try {
+          const tracksInfo = await SpotifyService.getTracksInfo(trackIds);
+          tracksInfoMap = tracksInfo.reduce((acc, t) => {
+            acc[t.id] = t;
+            return acc;
+          }, {});
+        } catch (e) {
+          console.log('Spotify tracks info fetch failed, will fallback to MusicBrainz where available', e.message);
+        }
+      }
+
       for (let i = 0; i < tracks.length; i++) {
         const track = tracks[i];
         setProgress({ current: i + 1, total: tracks.length });
-        
+
         let originalYear = null;
         let musicBrainzId = null;
-        
-        if (!skipMusicBrainz) {
+
+        // Try Spotify first
+        const sInfo = tracksInfoMap[track.id];
+        if (sInfo && sInfo.release_date) {
+          const year = parseInt((sInfo.release_date || '').toString().substring(0, 4));
+          if (!isNaN(year)) {
+            originalYear = year;
+          }
+        }
+
+        // If Spotify didn't provide a year and the user didn't opt out, fallback to MusicBrainz
+        if (!originalYear && !skipMusicBrainz) {
           try {
             const mbInfo = await MusicBrainzService.getEarliestReleaseYear(track.artist, track.name);
             if (mbInfo) {
@@ -76,11 +101,10 @@ const ImportScreen = ({ navigation }) => {
               musicBrainzId = mbInfo.recordingId;
             }
           } catch (error) {
-            // Ignore MusicBrainz errors, continue without year
-            console.log(`MusicBrainz skip for: ${track.name}`);
+            console.log(`MusicBrainz fallback failed for: ${track.name}`);
           }
         }
-        
+
         enhancedTracks.push({
           ...track,
           originalYear,
