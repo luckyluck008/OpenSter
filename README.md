@@ -1,2 +1,2 @@
 # OpenSter
-OpenSter ist eine offene App für Musik-Quiz-Enthusiasten und Fans von chronologischen Ratespielen. Das Projekt ermöglicht es Nutzern, ihr Wissen über Musikgeschichte spielerisch zu testen und gemeinsam neue Playlists zu entdecken.
+OpenSter is an open app for music quiz enthusiasts and fans of chronological guessing games. The project allows users to playfully test their knowledge of music history and discover new playlists together.
