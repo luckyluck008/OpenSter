@@ -471,6 +471,25 @@ class SpotifyPlaybackService {
 
     return response.data;
   }
+
+  // Springe zu einer bestimmten Position im Track
+  async seekToPosition(positionMs) {
+    await this.ensureValidToken();
+    console.log('Spotify API seek to:', positionMs, 'ms');
+
+    await axios.put(
+      `https://api.spotify.com/v1/me/player/seek?position_ms=${positionMs}`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${this.userAccessToken}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    console.log('Spotify seek API call successful');
+  }
 }
 
 export default new SpotifyPlaybackService();

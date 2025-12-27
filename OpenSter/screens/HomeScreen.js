@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import {
   View,
   Text,
@@ -8,77 +8,79 @@ import {
   Dimensions
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ThemeContext } from '../theme/ThemeProvider';
 
 const { width, height } = Dimensions.get('window');
 
 const HomeScreen = ({ navigation }) => {
+  const { theme } = useContext(ThemeContext);
+  const accent = theme?.accent || '#8a2be2';
+  const isDark = theme?.mode === 'dark';
+
   return (
-    <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: isDark ? '#121212' : '#fff' }} edges={['left', 'right', 'bottom']}>
       <ScrollView 
-        style={styles.scrollView}
+        className="flex-1"
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <Text style={styles.title}>🎵 OpenSter</Text>
-          <Text style={styles.subtitle}>Musik-Quiz-Spiel für deine Party</Text>
+        <View className="py-6 px-4 items-center">
+          <Text className="text-3xl font-bold" style={{ color: accent }}>🎵 OpenSter</Text>
+          <Text className="text-sm text-center mt-1" style={{ color: '#00ced1' }}>Musik-Quiz-Spiel für deine Party</Text>
         </View>
 
-        <View style={styles.content}>
+        <View className="px-4">
           <TouchableOpacity 
-            style={styles.featureCard}
+            className="bg-gray-800 rounded-2xl p-4 mb-3 border"
+            style={{ borderColor: isDark ? '#333' : '#e5e7eb' }}
             onPress={() => navigation.navigate('Import')}
             activeOpacity={0.8}
           >
-            <View style={styles.cardIcon}>
-              <Text style={styles.cardEmoji}>🎴</Text>
+            <View className="w-11 h-11 rounded-full bg-gray-700 justify-center items-center mb-3">
+              <Text className="text-xl">🎴</Text>
             </View>
-            <Text style={styles.featureTitle}>Spielkarten erstellen</Text>
-            <Text style={styles.featureDescription}>
-              Importiere eine Spotify-Playlist und generiere Spielkarten zum Ausdrucken.
-            </Text>
-            <View style={styles.featureButton}>
-              <Text style={styles.featureButtonText}>Playlist importieren →</Text>
+            <Text className="text-lg font-bold text-white mb-2">Spielkarten erstellen</Text>
+            <Text className="text-sm text-gray-400 mb-3">Importiere eine Spotify-Playlist und generiere Spielkarten zum Ausdrucken.</Text>
+            <View className="bg-purple-600 py-3 px-4 rounded">
+              <Text className="text-white text-sm font-semibold">Playlist importieren →</Text>
             </View>
           </TouchableOpacity>
 
           <TouchableOpacity 
-            style={styles.featureCard}
+            className="bg-gray-800 rounded-2xl p-4 mb-3 border"
+            style={{ borderColor: isDark ? '#333' : '#e5e7eb' }}
             onPress={() => navigation.navigate('Jukebox')}
             activeOpacity={0.8}
           >
-            <View style={styles.cardIcon}>
-              <Text style={styles.cardEmoji}>📱</Text>
+            <View className="w-11 h-11 rounded-full bg-gray-700 justify-center items-center mb-3">
+              <Text className="text-xl">📱</Text>
             </View>
-            <Text style={styles.featureTitle}>Jukebox-Modus</Text>
-            <Text style={styles.featureDescription}>
-              Scanne QR-Codes und spiele Musik über Spotify oder YouTube ab.
-            </Text>
-            <View style={styles.featureButton}>
-              <Text style={styles.featureButtonText}>QR-Scanner starten →</Text>
+            <Text className="text-lg font-bold text-white mb-2">Jukebox-Modus</Text>
+            <Text className="text-sm text-gray-400 mb-3">Scanne QR-Codes und spiele Musik über Spotify oder YouTube ab.</Text>
+            <View className="bg-purple-600 py-3 px-4 rounded">
+              <Text className="text-white text-sm font-semibold">QR-Scanner starten →</Text>
             </View>
           </TouchableOpacity>
 
           <TouchableOpacity 
-            style={styles.featureCard}
+            className="bg-gray-800 rounded-2xl p-4 mb-3 border"
+            style={{ borderColor: isDark ? '#333' : '#e5e7eb' }}
             onPress={() => navigation.navigate('Settings')}
             activeOpacity={0.8}
           >
-            <View style={styles.cardIcon}>
-              <Text style={styles.cardEmoji}>⚙️</Text>
+            <View className="w-11 h-11 rounded-full bg-gray-700 justify-center items-center mb-3">
+              <Text className="text-xl">⚙️</Text>
             </View>
-            <Text style={styles.featureTitle}>Einstellungen</Text>
-            <Text style={styles.featureDescription}>
-              API-Schlüssel für Spotify, YouTube und OpenAI verwalten.
-            </Text>
-            <View style={styles.featureButton}>
-              <Text style={styles.featureButtonText}>Einstellungen öffnen →</Text>
+            <Text className="text-lg font-bold text-white mb-2">Einstellungen</Text>
+            <Text className="text-sm text-gray-400 mb-3">API-Schlüssel für Spotify, YouTube und OpenAI verwalten.</Text>
+            <View className="bg-purple-600 py-3 px-4 rounded">
+              <Text className="text-white text-sm font-semibold">Einstellungen öffnen →</Text>
             </View>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>OpenSter - Open Source Musik-Quiz</Text>
+        <View className="py-4 items-center">
+          <Text className="text-xs text-gray-400">OpenSter - Open Source Musik-Quiz</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

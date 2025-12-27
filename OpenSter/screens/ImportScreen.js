@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import {
 import * as Clipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import SpotifyService from '../services/SpotifyService';
-import MusicBrainzService from '../services/MusicBrainzService';
+import { ThemeContext } from '../theme/ThemeProvider';
 
 const ImportScreen = ({ navigation }) => {
   const [playlistUrl, setPlaylistUrl] = useState('');
@@ -125,23 +125,28 @@ const ImportScreen = ({ navigation }) => {
     }
   };
 
+  const { theme } = useContext(ThemeContext);
+  const accent = theme?.accent || '#8a2be2';
+  const isDark = theme?.mode === 'dark';
+
   return (
-    <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: isDark ? '#121212' : '#fff' }} edges={['left', 'right', 'bottom']}>
       <KeyboardAvoidingView 
-        style={styles.keyboardView}
+        className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView 
-          style={styles.scrollView}
+          className="flex-1"
           contentContainerStyle={styles.scrollContainer}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.inputSection}>
-            <Text style={styles.label}>Spotify Playlist URL</Text>
-            <View style={styles.inputRow}>
+          <View className="mb-4">
+            <Text className="text-sm font-semibold mb-2" style={{ color: isDark ? '#fff' : '#111' }}>Spotify Playlist URL</Text>
+            <View className="flex-row items-center">
               <TextInput
-                style={styles.inputWithButton}
+                className="flex-1 border border-gray-700 bg-gray-800 text-white p-3 rounded-l-lg"
+                style={{ backgroundColor: isDark ? '#1e1e1e' : '#fff', color: isDark ? '#fff' : '#111' }}
                 value={playlistUrl}
                 onChangeText={(text) => setPlaylistUrl(text)}
                 placeholder="Playlist-Link hier einfügen..."
@@ -154,68 +159,68 @@ const ImportScreen = ({ navigation }) => {
                 keyboardType="url"
               />
               <TouchableOpacity 
-                style={styles.pasteButton}
+                className="w-12 h-12 justify-center items-center rounded-r-lg"
+                style={{ backgroundColor: accent }}
                 onPress={handlePasteFromClipboard}
                 activeOpacity={0.7}
               >
-                <Text style={styles.pasteButtonText}>📋</Text>
+                <Text className="text-xl">📋</Text>
               </TouchableOpacity>
             </View>
           </View>
-          
+
           <TouchableOpacity 
-            style={styles.checkboxRow}
+            className="flex-row items-center mb-4 py-2"
             onPress={() => setSkipMusicBrainz(!skipMusicBrainz)}
             activeOpacity={0.7}
           >
-            <View style={[styles.checkbox, skipMusicBrainz && styles.checkboxChecked]}>
-              {skipMusicBrainz && <Text style={styles.checkmark}>✓</Text>}
+            <View className="w-6 h-6 rounded-md mr-3 justify-center items-center" style={{ borderWidth: 2, borderColor: '#666', backgroundColor: skipMusicBrainz ? accent : 'transparent' }}>
+              {skipMusicBrainz && <Text className="text-white">✓</Text>}
             </View>
-            <Text style={styles.checkboxLabel}>Schnell-Import (ohne Jahressuche)</Text>
+            <Text className="text-sm text-gray-400">Schnell-Import (ohne Jahressuche)</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity 
-            style={[styles.importButton, isLoading && styles.buttonDisabled]} 
+            className="py-4 rounded-lg items-center mb-4"
+            style={{ backgroundColor: accent, opacity: isLoading ? 0.7 : 1 }}
             onPress={handleImportPlaylist}
             disabled={isLoading}
             activeOpacity={0.8}
           >
             {isLoading ? (
-              <View style={styles.loadingRow}>
+              <View className="flex-row items-center">
                 <ActivityIndicator color="#fff" size="small" />
-                <Text style={styles.importButtonText}>
-                  {progress.total > 0 ? `${progress.current}/${progress.total}` : 'Lade...'}
-                </Text>
+                <Text className="text-white ml-2">{progress.total > 0 ? `${progress.current}/${progress.total}` : 'Lade...'}</Text>
               </View>
             ) : (
-              <Text style={styles.importButtonText}>📥 Playlist importieren</Text>
+              <Text className="text-white font-bold">📥 Playlist importieren</Text>
             )}
           </TouchableOpacity>
-          
+
           {playlistInfo && (
-            <View style={styles.playlistCard}>
-              <Text style={styles.cardTitle}>Playlist Info</Text>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Name:</Text>
-                <Text style={styles.infoValue}>{playlistInfo.name}</Text>
+            <View className="rounded-lg p-4 mb-4 border" style={{ backgroundColor: isDark ? '#1e1e1e' : '#fff', borderColor: accent }}>
+              <Text className="text-sm font-bold text-purple-400 mb-3">Playlist Info</Text>
+              <View className="flex-row mb-2">
+                <Text className="text-sm text-gray-400 w-20">Name:</Text>
+                <Text className="text-sm text-white flex-1">{playlistInfo.name}</Text>
               </View>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Ersteller:</Text>
-                <Text style={styles.infoValue}>{playlistInfo.owner}</Text>
+              <View className="flex-row mb-2">
+                <Text className="text-sm text-gray-400 w-20">Ersteller:</Text>
+                <Text className="text-sm text-white flex-1">{playlistInfo.owner}</Text>
               </View>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Tracks:</Text>
-                <Text style={styles.infoValue}>{playlistInfo.trackCount}</Text>
+              <View className="flex-row">
+                <Text className="text-sm text-gray-400 w-20">Tracks:</Text>
+                <Text className="text-sm text-white flex-1">{playlistInfo.trackCount}</Text>
               </View>
             </View>
           )}
-          
-          <View style={styles.helpCard}>
-            <Text style={styles.helpTitle}>💡 So findest du die URL</Text>
-            <Text style={styles.helpText}>1. Öffne Spotify</Text>
-            <Text style={styles.helpText}>2. Gehe zur gewünschten Playlist</Text>
-            <Text style={styles.helpText}>3. Tippe auf "Teilen" → "Link kopieren"</Text>
-            <Text style={styles.helpText}>4. Füge den Link hier ein</Text>
+
+          <View className="rounded-lg p-4" style={{ backgroundColor: isDark ? '#1e1e1e' : '#fff', borderColor: '#333', borderWidth: 1 }}>
+            <Text className="text-sm font-bold text-teal-400 mb-2">💡 So findest du die URL</Text>
+            <Text className="text-sm text-gray-400">1. Öffne Spotify</Text>
+            <Text className="text-sm text-gray-400">2. Gehe zur gewünschten Playlist</Text>
+            <Text className="text-sm text-gray-400">3. Tippe auf "Teilen" → "Link kopieren"</Text>
+            <Text className="text-sm text-gray-400">4. Füge den Link hier ein</Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

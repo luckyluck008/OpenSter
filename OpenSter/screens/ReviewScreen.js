@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -10,11 +10,15 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ThemeContext } from '../theme/ThemeProvider';
 
 const ReviewScreen = ({ route, navigation }) => {
   const { playlistInfo, tracks } = route.params;
   const [editedTracks, setEditedTracks] = useState(tracks);
   const [editingTrackIndex, setEditingTrackIndex] = useState(null);
+  const { theme } = useContext(ThemeContext);
+  const accent = theme?.accent || '#8a2be2';
+  const isDark = theme?.mode === 'dark';
 
   const updateTrack = (index, field, value) => {
     const updatedTracks = [...editedTracks];
@@ -99,12 +103,12 @@ const ReviewScreen = ({ route, navigation }) => {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
-      <View style={styles.header}>
-        <Text style={styles.playlistName} numberOfLines={1}>{playlistInfo.name}</Text>
-        <Text style={styles.trackCount}>{tracks.length} Tracks</Text>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: isDark ? '#121212' : '#fff' }} edges={['left', 'right', 'bottom']}>
+      <View className="px-4 py-3 border-b" style={{ borderBottomColor: isDark ? '#333' : '#e5e7eb' }}>
+        <Text className="text-lg font-bold text-white" numberOfLines={1}>{playlistInfo.name}</Text>
+        <Text className="text-sm" style={{ color: accent }}>{tracks.length} Tracks</Text>
       </View>
-      
+
       <FlatList
         data={editedTracks}
         renderItem={renderTrackItem}
@@ -112,14 +116,15 @@ const ReviewScreen = ({ route, navigation }) => {
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
       />
-      
-      <View style={styles.footer}>
+
+      <View className="p-4 border-t" style={{ borderTopColor: isDark ? '#333' : '#e5e7eb' }}>
         <TouchableOpacity 
-          style={styles.generateButton} 
+          className="py-3 rounded-lg items-center"
           onPress={handleGenerateCards}
           activeOpacity={0.8}
+          style={{ backgroundColor: accent }}
         >
-          <Text style={styles.generateButtonText}>🎴 Karten generieren</Text>
+          <Text className="text-white font-bold">🎴 Karten generieren</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+// Using a stack-only navigation: no bottom tab bar
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Text } from 'react-native';
+import ThemeProvider, { ThemeContext } from './theme/ThemeProvider';
 
 // Importiere unsere Screens
 import SettingsScreen from './screens/SettingsScreen';
@@ -13,7 +14,7 @@ import PrintScreen from './screens/PrintScreen';
 import JukeboxScreen from './screens/JukeboxScreen';
 
 const Stack = createNativeStackNavigator();
-const Tab = createBottomTabNavigator();
+const Tab = null;
 
 // Stack für Spielkarten (Import -> Review -> Print)
 function SpielkartenStack() {
@@ -46,61 +47,37 @@ function SpielkartenStack() {
 }
 
 export default function App() {
-  return (
-    <SafeAreaProvider>
+  const Main = () => {
+    const { theme } = useContext(ThemeContext);
+    const isDark = theme.mode === 'dark';
+    const bgHeader = isDark ? '#121212' : '#ffffff';
+    const tabBg = isDark ? '#1e1e1e' : '#f7f7f7';
+    const active = theme.accent || '#8a2be2';
+
+    return (
       <NavigationContainer>
-        <Tab.Navigator
+        <Stack.Navigator
+          initialRouteName="Jukebox"
           screenOptions={{
-            headerStyle: { backgroundColor: '#121212' },
-            headerTintColor: '#fff',
+            headerStyle: { backgroundColor: bgHeader },
+            headerTintColor: isDark ? '#fff' : '#111',
             headerTitleStyle: { fontWeight: 'bold' },
-            tabBarStyle: {
-              backgroundColor: '#1e1e1e',
-              borderTopColor: '#333',
-              paddingBottom: 8,
-              paddingTop: 8,
-              height: 65,
-            },
-            tabBarActiveTintColor: '#8a2be2',
-            tabBarInactiveTintColor: '#666',
-            tabBarLabelStyle: {
-              fontSize: 12,
-              fontWeight: '600',
-            },
+            contentStyle: { backgroundColor: isDark ? '#121212' : '#fff' },
           }}
         >
-          <Tab.Screen 
-            name="Spielkarten" 
-            component={SpielkartenStack}
-            options={{
-              headerShown: false,
-              tabBarIcon: ({ color, size }) => (
-                <Text style={{ fontSize: 24 }}>🃏</Text>
-              ),
-            }}
-          />
-          <Tab.Screen 
-            name="Jukebox" 
-            component={JukeboxScreen}
-            options={{
-              title: 'Jukebox',
-              tabBarIcon: ({ color, size }) => (
-                <Text style={{ fontSize: 24 }}>🎵</Text>
-              ),
-            }}
-          />
-          <Tab.Screen 
-            name="Einstellungen" 
-            component={SettingsScreen}
-            options={{
-              title: 'Einstellungen',
-              tabBarIcon: ({ color, size }) => (
-                <Text style={{ fontSize: 24 }}>⚙️</Text>
-              ),
-            }}
-          />
-        </Tab.Navigator>
+          <Stack.Screen name="Jukebox" component={JukeboxScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="Spielkarten" component={SpielkartenStack} options={{ headerShown: false }} />
+          <Stack.Screen name="Einstellungen" component={SettingsScreen} options={{ headerShown: false }} />
+        </Stack.Navigator>
       </NavigationContainer>
-    </SafeAreaProvider>
+    );
+  };
+
+  return (
+    <ThemeProvider>
+      <SafeAreaProvider>
+        <Main />
+      </SafeAreaProvider>
+    </ThemeProvider>
   );
 }

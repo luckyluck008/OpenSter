@@ -1,20 +1,33 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View,
   Text,
   TextInput,
-  StyleSheet,
   TouchableOpacity,
   ScrollView,
   Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Switch
+  Switch,
+  StyleSheet
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
+import { ThemeContext } from '../theme/ThemeProvider';
+import { 
+  Key, 
+  Spotify, 
+  Youtube, 
+  Cpu, 
+  Timer, 
+  Palette, 
+  Save, 
+  ChevronLeft,
+  Info,
+  CheckCircle2
+} from 'lucide-react-native';
 
 const SettingsScreen = ({ navigation }) => {
   const [spotifyClientId, setSpotifyClientId] = useState('');
@@ -24,10 +37,21 @@ const SettingsScreen = ({ navigation }) => {
   const [playbackTimerEnabled, setPlaybackTimerEnabled] = useState(false);
   const [playbackTimerSeconds, setPlaybackTimerSeconds] = useState('30');
   const [isLoading, setIsLoading] = useState(true);
+  
+  const { theme, setTheme } = useContext(ThemeContext);
+  const [localAccent, setLocalAccent] = useState(theme?.accent || '#634E34');
+  const [localMode, setLocalMode] = useState(theme?.mode || 'light');
 
   useEffect(() => {
     loadSettings();
   }, []);
+
+  useEffect(() => {
+    if (theme) {
+      setLocalAccent(theme.accent || '#634E34');
+      setLocalMode(theme.mode || 'light');
+    }
+  }, [theme]);
 
   const loadSettings = async () => {
     try {
@@ -46,7 +70,7 @@ const SettingsScreen = ({ navigation }) => {
       setPlaybackTimerSeconds(storedTimerSeconds || '30');
     } catch (error) {
       console.error('Error loading settings:', error);
-      Alert.alert('Error', 'Failed to load settings');
+      Alert.alert('Fehler', 'Einstellungen konnten nicht geladen werden');
     } finally {
       setIsLoading(false);
     }
@@ -58,153 +82,177 @@ const SettingsScreen = ({ navigation }) => {
       await AsyncStorage.setItem('playbackTimerEnabled', playbackTimerEnabled.toString());
       await AsyncStorage.setItem('playbackTimerSeconds', playbackTimerSeconds);
       
-      if (spotifyClientSecret) {
-        await SecureStore.setItemAsync('spotifyClientSecret', spotifyClientSecret);
-      }
-      
-      if (youtubeApiKey) {
-        await SecureStore.setItemAsync('youtubeApiKey', youtubeApiKey);
-      }
-      
-      if (openaiApiKey) {
-        await SecureStore.setItemAsync('openaiApiKey', openaiApiKey);
-      }
+      if (spotifyClientSecret) await SecureStore.setItemAsync('spotifyClientSecret', spotifyClientSecret);
+      if (youtubeApiKey) await SecureStore.setItemAsync('youtubeApiKey', youtubeApiKey);
+      if (openaiApiKey) await SecureStore.setItemAsync('openaiApiKey', openaiApiKey);
 
-      Alert.alert('Erfolg', 'Einstellungen gespeichert!');
+      if (setTheme) {
+        setTheme({ mode: localMode, accent: localAccent });
+      }
+      
+      Alert.alert('Erfolg', 'Einstellungen wurden sicher gespeichert.');
     } catch (error) {
-      console.error('Error saving settings:', error);
-      Alert.alert('Fehler', 'Einstellungen konnten nicht gespeichert werden');
+      Alert.alert('Fehler', 'Speichern fehlgeschlagen');
     }
   };
 
+  const SettingCard = ({ title, icon: Icon, children, color }) => (
+    <View style={[styles.card, { backgroundColor: localMode === 'dark' ? '#1E1E1E' : '#FFFFFF' }]}>
+      <View style={styles.cardHeader}>
+        <View style={[styles.iconContainer, { backgroundColor: color + '20' }]}>
+          <Icon size={20} color={color} />
+        </View>
+        <Text style={[styles.cardTitle, { color: localMode === 'dark' ? '#FFFFFF' : '#1C1C1C' }]}>{title}</Text>
+      </View>
+      <View style={styles.cardContent}>{children}</View>
+    </View>
+  );
+
+  const CustomInput = ({ label, ...props }) => (
+    <View style={styles.inputWrapper}>
+      <Text style={[styles.inputLabel, { color: localMode === 'dark' ? '#AAAAAA' : '#666666' }]}>{label}</Text>
+      <TextInput
+        {...props}
+        style={[
+          styles.input,
+          { 
+            backgroundColor: localMode === 'dark' ? '#2C2C2C' : '#F5F5F5',
+            color: localMode === 'dark' ? '#FFFFFF' : '#000000',
+            borderColor: localMode === 'dark' ? '#3D3D3D' : '#E0E0E0'
+          }
+        ]}
+        placeholderTextColor={localMode === 'dark' ? '#666666' : '#999999'}
+      />
+    </View>
+  );
+
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#8a2be2" />
-          <Text style={styles.loadingText}>Lade Einstellungen...</Text>
-        </View>
-      </SafeAreaView>
+      <View style={[styles.loadingContainer, { backgroundColor: localMode === 'dark' ? '#121212' : '#FDF8F1' }]}>
+        <ActivityIndicator size="large" color={localAccent} />
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
-      <KeyboardAvoidingView 
-        style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <ScrollView 
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContainer}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Spotify Client ID</Text>
-            <TextInput
-              style={styles.input}
-              value={spotifyClientId}
-              onChangeText={setSpotifyClientId}
-              placeholder="Client ID eingeben"
-              placeholderTextColor="#666"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </View>
+    <SafeAreaView style={[styles.container, { backgroundColor: localMode === 'dark' ? '#121212' : '#FDF8F1' }]}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <ChevronLeft size={28} color={localMode === 'dark' ? '#FFFFFF' : '#1C1C1C'} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: localMode === 'dark' ? '#FFFFFF' : '#1C1C1C' }]}>Einstellungen</Text>
+        <View style={{ width: 40 }} />
+      </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Spotify Client Secret</Text>
-            <TextInput
-              style={styles.input}
-              value={spotifyClientSecret}
-              onChangeText={setSpotifyClientSecret}
-              placeholder="Client Secret eingeben"
-              placeholderTextColor="#666"
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>YouTube API Key</Text>
-            <TextInput
-              style={styles.input}
-              value={youtubeApiKey}
-              onChangeText={setYoutubeApiKey}
-              placeholder="API Key eingeben"
-              placeholderTextColor="#666"
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>OpenAI API Key (Optional)</Text>
-            <TextInput
-              style={styles.input}
-              value={openaiApiKey}
-              onChangeText={setOpenaiApiKey}
-              placeholder="API Key eingeben"
-              placeholderTextColor="#666"
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </View>
-
-          {/* Timer Section */}
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>⏱️ Auto-Stop Timer</Text>
-          </View>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           
-          <View style={styles.timerContainer}>
-            <View style={styles.timerRow}>
-              <Text style={styles.timerLabel}>Timer aktiviert</Text>
+          <SettingCard title="Spotify Konfiguration" icon={Key} color="#1DB954">
+            <CustomInput 
+              label="Client ID" 
+              value={spotifyClientId} 
+              onChangeText={setSpotifyClientId} 
+              placeholder="Deine Spotify Client ID"
+              autoCapitalize="none"
+            />
+            <CustomInput 
+              label="Client Secret" 
+              value={spotifyClientSecret} 
+              onChangeText={setSpotifyClientSecret} 
+              placeholder="Wird sicher gespeichert"
+              secureTextEntry
+              autoCapitalize="none"
+            />
+          </SettingCard>
+
+          <SettingCard title="Zusätzliche Dienste" icon={Cpu} color={localAccent}>
+            <CustomInput 
+              label="YouTube API Key" 
+              value={youtubeApiKey} 
+              onChangeText={setYoutubeApiKey} 
+              placeholder="Für Musiksuche"
+              secureTextEntry
+            />
+            <CustomInput 
+              label="OpenAI API Key" 
+              value={openaiApiKey} 
+              onChangeText={setOpenaiApiKey} 
+              placeholder="Optional: Für KI-Features"
+              secureTextEntry
+            />
+          </SettingCard>
+
+          <SettingCard title="Wiedergabe" icon={Timer} color="#FF9500">
+            <View style={styles.switchRow}>
+              <View>
+                <Text style={[styles.switchLabel, { color: localMode === 'dark' ? '#FFFFFF' : '#1C1C1C' }]}>Auto-Stop Timer</Text>
+                <Text style={styles.switchSubLabel}>Stoppt Musik automatisch</Text>
+              </View>
               <Switch
                 value={playbackTimerEnabled}
                 onValueChange={setPlaybackTimerEnabled}
-                trackColor={{ false: '#333', true: '#8a2be2' }}
-                thumbColor={playbackTimerEnabled ? '#fff' : '#999'}
+                trackColor={{ false: '#D1D1D1', true: localAccent }}
+                thumbColor="#FFFFFF"
               />
             </View>
-            
             {playbackTimerEnabled && (
-              <View style={styles.timerSecondsRow}>
-                <Text style={styles.timerLabel}>Sekunden:</Text>
+              <View style={styles.timerInputRow}>
                 <TextInput
-                  style={styles.timerInput}
+                  style={[styles.smallInput, { backgroundColor: localMode === 'dark' ? '#2C2C2C' : '#F5F5F5', color: localMode === 'dark' ? '#FFFFFF' : '#000000' }]}
                   value={playbackTimerSeconds}
                   onChangeText={setPlaybackTimerSeconds}
-                  placeholder="30"
-                  placeholderTextColor="#666"
                   keyboardType="numeric"
-                  maxLength={3}
+                  maxLength={4}
                 />
-                <Text style={styles.timerHint}>sek</Text>
+                <Text style={{ color: localMode === 'dark' ? '#AAAAAA' : '#666666', marginLeft: 10 }}>Sekunden bis Stop</Text>
               </View>
             )}
+          </SettingCard>
+
+          <SettingCard title="Erscheinungsbild" icon={Palette} color={localAccent}>
+            <Text style={[styles.subSectionTitle, { color: localMode === 'dark' ? '#AAAAAA' : '#666666' }]}>Akzentfarbe wählen</Text>
+            <View style={styles.colorGrid}>
+              {['#634E34', '#8a2be2', '#ff3b30', '#34c759', '#0a84ff', '#E91E63', '#009688'].map((color) => (
+                <TouchableOpacity
+                  key={color}
+                  onPress={() => setLocalAccent(color)}
+                  style={[
+                    styles.colorCircle,
+                    { backgroundColor: color },
+                    localAccent === color && styles.colorCircleActive
+                  ]}
+                >
+                  {localAccent === color && <CheckCircle2 size={18} color="#FFF" />}
+                </TouchableOpacity>
+              ))}
+            </View>
             
-            <Text style={styles.timerDescription}>
-              {playbackTimerEnabled 
-                ? `Wiedergabe stoppt automatisch nach ${playbackTimerSeconds} Sekunden`
-                : 'Timer ist deaktiviert - Wiedergabe läuft kontinuierlich'}
+            <View style={[styles.switchRow, { marginTop: 20, borderTopWidth: 1, borderTopColor: localMode === 'dark' ? '#333' : '#EEE', paddingTop: 15 }]}>
+              <Text style={[styles.switchLabel, { color: localMode === 'dark' ? '#FFFFFF' : '#1C1C1C' }]}>Dunkelmodus</Text>
+              <Switch
+                value={localMode === 'dark'}
+                onValueChange={(val) => setLocalMode(val ? 'dark' : 'light')}
+                trackColor={{ false: '#D1D1D1', true: localAccent }}
+              />
+            </View>
+          </SettingCard>
+
+          <TouchableOpacity 
+            style={[styles.saveButton, { backgroundColor: localAccent }]} 
+            onPress={saveSettings}
+            activeOpacity={0.8}
+          >
+            <Save size={20} color="#FFF" />
+            <Text style={styles.saveButtonText}>Speichern</Text>
+          </TouchableOpacity>
+
+          <View style={[styles.infoBox, { backgroundColor: localMode === 'dark' ? '#1E1E1E' : '#F0F0F0' }]}>
+            <Info size={16} color={localAccent} />
+            <Text style={[styles.infoText, { color: localMode === 'dark' ? '#888' : '#666' }]}>
+              Deine API Keys werden lokal auf diesem Gerät verschlüsselt gespeichert.
             </Text>
           </View>
 
-          <TouchableOpacity style={styles.saveButton} onPress={saveSettings}>
-            <Text style={styles.saveButtonText}>💾 Speichern</Text>
-          </TouchableOpacity>
-
-          <View style={styles.infoContainer}>
-            <Text style={styles.infoTitle}>ℹ️ Hinweise</Text>
-            <Text style={styles.infoText}>• Alle Daten werden lokal gespeichert</Text>
-            <Text style={styles.infoText}>• Spotify: developer.spotify.com</Text>
-            <Text style={styles.infoText}>• YouTube: console.cloud.google.com</Text>
-            <Text style={styles.infoText}>• OpenAI: platform.openai.com</Text>
-          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -212,133 +260,74 @@ const SettingsScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#121212',
+  container: { flex: 1 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  header: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    paddingHorizontal: 16,
+    height: 60
   },
-  keyboardView: {
-    flex: 1,
+  headerTitle: { fontSize: 20, fontWeight: '700' },
+  backButton: { padding: 8 },
+  scrollContent: { padding: 20, paddingBottom: 40 },
+  
+  card: {
+    borderRadius: 28, // Material 3 Look
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
   },
-  scrollView: {
-    flex: 1,
+  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 18 },
+  iconContainer: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  cardTitle: { fontSize: 17, fontWeight: '700' },
+  cardContent: { gap: 12 },
+
+  inputWrapper: { marginBottom: 14 },
+  inputLabel: { fontSize: 13, fontWeight: '600', marginBottom: 6, marginLeft: 4 },
+  input: {
+    height: 54,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    borderWidth: 1,
   },
-  scrollContainer: {
-    padding: 16,
-    paddingBottom: 32,
-  },
-  loadingContainer: {
-    flex: 1,
+
+  switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  switchLabel: { fontSize: 16, fontWeight: '600' },
+  switchSubLabel: { fontSize: 13, color: '#888', marginTop: 2 },
+  
+  timerInputRow: { flexDirection: 'row', alignItems: 'center', marginTop: 15 },
+  smallInput: { width: 70, height: 45, borderRadius: 12, textAlign: 'center', fontSize: 16, fontWeight: 'bold' },
+
+  subSectionTitle: { fontSize: 13, fontWeight: '700', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
+  colorGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  colorCircle: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
+  colorCircleActive: { borderWidth: 3, borderColor: 'rgba(255,255,255,0.5)' },
+
+  saveButton: {
+    flexDirection: 'row',
+    height: 60,
+    borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 10,
+    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6
   },
-  loadingText: {
-    color: '#999',
-    marginTop: 12,
-    fontSize: 14,
-  },
-  inputContainer: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#fff',
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#333',
-    backgroundColor: '#1e1e1e',
-    color: '#fff',
-    padding: 14,
-    borderRadius: 10,
-    fontSize: 16,
-  },
-  saveButton: {
-    backgroundColor: '#8a2be2',
-    padding: 16,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 24,
-  },
-  saveButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  sectionHeader: {
-    marginTop: 16,
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  timerContainer: {
-    backgroundColor: '#1e1e1e',
-    padding: 16,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#333',
-    marginBottom: 16,
-  },
-  timerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  timerSecondsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  timerLabel: {
-    fontSize: 14,
-    color: '#fff',
-  },
-  timerInput: {
-    borderWidth: 1,
-    borderColor: '#333',
-    backgroundColor: '#121212',
-    color: '#fff',
-    padding: 10,
-    borderRadius: 8,
-    fontSize: 16,
-    width: 80,
-    marginLeft: 12,
-    textAlign: 'center',
-  },
-  timerHint: {
-    color: '#999',
-    marginLeft: 8,
-    fontSize: 14,
-  },
-  timerDescription: {
-    color: '#666',
-    fontSize: 12,
-    fontStyle: 'italic',
-  },
-  infoContainer: {
-    backgroundColor: '#1e1e1e',
-    padding: 16,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#333',
-  },
-  infoTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#8a2be2',
-    marginBottom: 10,
-  },
-  infoText: {
-    color: '#999',
-    marginBottom: 4,
-    fontSize: 13,
-  },
+  saveButtonText: { color: '#FFF', fontSize: 18, fontWeight: '700' },
+
+  infoBox: { flexDirection: 'row', padding: 16, borderRadius: 20, marginTop: 30, gap: 12, alignItems: 'center' },
+  infoText: { flex: 1, fontSize: 12, lineHeight: 18 }
 });
 
 export default SettingsScreen;

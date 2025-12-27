@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { generateCardsPDF } from '../components/PDFGenerator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ThemeContext } from '../theme/ThemeProvider';
 
 const PrintScreen = ({ navigation, route }) => {
   const [tracks, setTracks] = useState([]);
@@ -20,6 +21,10 @@ const PrintScreen = ({ navigation, route }) => {
   useEffect(() => {
     loadTracks();
   }, []);
+
+  const { theme } = useContext(ThemeContext);
+  const accent = theme?.accent || '#8a2be2';
+  const isDark = theme?.mode === 'dark';
 
   const loadTracks = async () => {
     try {
@@ -54,79 +59,81 @@ const PrintScreen = ({ navigation, route }) => {
 
   if (!loaded) {
     return (
-      <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#8a2be2" />
-          <Text style={styles.loadingText}>Lade Daten...</Text>
+      <SafeAreaView className="flex-1" style={{ backgroundColor: isDark ? '#121212' : '#fff' }} edges={['left', 'right', 'bottom']}>
+        <View className="flex-1 justify-center items-center">
+          <ActivityIndicator size="large" color={accent} />
+          <Text className="mt-3 text-gray-400">Lade Daten...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: isDark ? '#121212' : '#fff' }} edges={['left', 'right', 'bottom']}>
       <ScrollView 
-        style={styles.scrollView}
+        className="flex-1"
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.statsCard}>
-          <View style={styles.statRow}>
-            <Text style={styles.statLabel}>Songs</Text>
-            <Text style={styles.statValue}>{tracks.length}</Text>
+        <View className="rounded-lg p-4 mb-5" style={{ backgroundColor: isDark ? '#1e1e1e' : '#fff', borderColor: isDark ? '#333' : '#e5e7eb', borderWidth: 1 }}>
+          <View className="flex-row justify-between mb-2">
+            <Text className="text-sm text-gray-400">Songs</Text>
+            <Text className="text-sm font-bold" style={{ color: accent }}>{tracks.length}</Text>
           </View>
-          <View style={styles.statRow}>
-            <Text style={styles.statLabel}>Seiten (A4)</Text>
-            <Text style={styles.statValue}>{Math.ceil(tracks.length / 9)}</Text>
+          <View className="flex-row justify-between mb-2">
+            <Text className="text-sm text-gray-400">Seiten (A4)</Text>
+            <Text className="text-sm font-bold" style={{ color: accent }}>{Math.ceil(tracks.length / 9)}</Text>
           </View>
-          <View style={styles.statRow}>
-            <Text style={styles.statLabel}>Karten pro Seite</Text>
-            <Text style={styles.statValue}>9</Text>
+          <View className="flex-row justify-between">
+            <Text className="text-sm text-gray-400">Karten pro Seite</Text>
+            <Text className="text-sm font-bold" style={{ color: accent }}>9</Text>
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>Vorschau</Text>
+        <Text className="text-base font-bold text-white mb-3">Vorschau</Text>
         
-        <View style={styles.previewGrid}>
+        <View className="flex-row flex-wrap -mx-1 mb-3">
           {tracks.slice(0, 6).map((track, index) => (
-            <View key={index} style={styles.cardPreview}>
-              <Text style={styles.cardArtist} numberOfLines={1}>{track.artist}</Text>
-              <Text style={styles.cardYear}>{track.originalYear || '----'}</Text>
-              <Text style={styles.cardTitle} numberOfLines={1}>{track.name}</Text>
+            <View key={index} className="w-1/3 p-1">
+              <View className="rounded-lg p-2 items-center" style={{ backgroundColor: isDark ? '#1e1e1e' : '#fff', borderColor: isDark ? '#333' : '#e5e7eb', borderWidth: 1 }}>
+                <Text className="text-xs text-gray-400 mb-1" numberOfLines={1}>{track.artist}</Text>
+                <Text className="text-xl font-bold mb-1" style={{ color: accent }}>{track.originalYear || '----'}</Text>
+                <Text className="text-xs text-white text-center" numberOfLines={1}>{track.name}</Text>
+              </View>
             </View>
           ))}
         </View>
-        
+
         {tracks.length > 6 && (
-          <Text style={styles.moreText}>+{tracks.length - 6} weitere Karten</Text>
+          <Text className="text-sm text-gray-400 mb-3">+{tracks.length - 6} weitere Karten</Text>
         )}
 
         {tracks.length === 0 && (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>Keine Tracks geladen</Text>
-            <Text style={styles.emptyHint}>Importiere zuerst eine Playlist</Text>
+          <View className="rounded-lg p-8 items-center mb-4" style={{ backgroundColor: isDark ? '#1e1e1e' : '#fff', borderColor: isDark ? '#333' : '#e5e7eb', borderWidth: 1 }}>
+            <Text className="text-white text-lg font-bold mb-2">Keine Tracks geladen</Text>
+            <Text className="text-gray-400">Importiere zuerst eine Playlist</Text>
           </View>
         )}
 
         <TouchableOpacity 
-          style={[styles.generateButton, isGenerating && styles.buttonDisabled]} 
+          className="py-4 rounded-lg items-center mb-4"
           onPress={handleGeneratePDF}
           disabled={isGenerating || tracks.length === 0}
           activeOpacity={0.8}
+          style={{ backgroundColor: accent, opacity: (isGenerating || tracks.length === 0) ? 0.7 : 1 }}
         >
           {isGenerating ? (
-            <View style={styles.loadingRow}>
+            <View className="flex-row items-center">
               <ActivityIndicator size="small" color="#fff" />
-              <Text style={styles.buttonText}>Generiere PDF...</Text>
+              <Text className="text-white ml-2">Generiere PDF...</Text>
             </View>
           ) : (
-            <Text style={styles.buttonText}>📄 PDF generieren</Text>
+            <Text className="text-white font-bold">📄 PDF generieren</Text>
           )}
         </TouchableOpacity>
         
-        <Text style={styles.hintText}>
-          Das PDF enthält Vorder- und Rückseiten.{'\n'}
-          Für doppelseitigen Druck verwenden.
+        <Text className="text-sm text-gray-400 text-center mt-2">
+          Das PDF enthält Vorder- und Rückseiten.{"\n"}Für doppelseitigen Druck verwenden.
         </Text>
       </ScrollView>
     </SafeAreaView>

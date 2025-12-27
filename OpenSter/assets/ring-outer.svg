@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">
+  <circle
+    cx="150"
+    cy="150"
+    r="100"
+    fill="none"
+    stroke="#6BCF77"
+    stroke-width="12"
+    stroke-linecap="round"
+    stroke-dasharray="560 70"
+    transform="rotate(-90 150 150)"
+  />
+</svg>
