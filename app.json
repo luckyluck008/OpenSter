@@ -16,6 +16,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.openster.app",
       "infoPlist": {
+        "NSCameraUsageDescription": "Diese App benötigt Kamerazugriff zum Scannen von Spotify QR-Codes.",
         "LSApplicationQueriesSchemes": [
           "spotify"
         ]

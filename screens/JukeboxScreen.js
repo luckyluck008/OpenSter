@@ -131,7 +131,10 @@ const JukeboxScreen = ({ navigation }) => {
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => { setIsDragging(true); },
+      onPanResponderGrant: () => {
+        setIsDragging(true);
+        lastInteractionTime.current = Date.now();
+      },
       onPanResponderMove: (evt, gestureState) => {
         if (progressBarRef.current) {
           progressBarRef.current.measure((x, y, width, height, pageX, pageY) => {
@@ -178,7 +181,7 @@ const JukeboxScreen = ({ navigation }) => {
   const animateButtons = (type) => {
     const expandValue = type === 'scan' ? 1.5 : 1.25;
     const shrinkValue = 0.9;
-    const configExpand = { duration: 80, useNativeDriver: false, easing: Easing.out(Easing.quad) };
+    const configExpand = { duration: 80, useNativeDriver: false, easing: Easing.ease };
     const configReset = { useNativeDriver: false, friction: 8, tension: 200 };
     Animated.sequence([
       Animated.parallel([
@@ -363,6 +366,7 @@ const JukeboxScreen = ({ navigation }) => {
               toValue: (processedItems / totalItems) * 100,
               duration: 200,
               useNativeDriver: false,
+              easing: Easing.ease,
             }).start();
           }
         } else {
@@ -390,6 +394,7 @@ const JukeboxScreen = ({ navigation }) => {
             toValue: (processedItems / totalItems) * 100,
             duration: 200,
             useNativeDriver: false,
+            easing: Easing.ease,
           }).start();
         }
       }
@@ -578,7 +583,7 @@ const JukeboxScreen = ({ navigation }) => {
            <CameraView 
              style={StyleSheet.absoluteFillObject} 
              facing="back"
-             onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+             onBarcodeScanned={scanned ? null : handleBarCodeScanned}
              barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
            />
            <View style={styles.scannerOverlay}>
