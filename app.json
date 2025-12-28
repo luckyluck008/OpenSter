@@ -34,7 +34,12 @@
     },
     "plugins": [
       "expo-web-browser",
-      "expo-barcode-scanner"
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Diese App benötigt Kamerazugriff zum Scannen von Spotify QR-Codes."
+        }
+      ]
     ],
     "extra": {
       "eas": {

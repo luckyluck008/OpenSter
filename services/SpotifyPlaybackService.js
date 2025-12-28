@@ -11,7 +11,7 @@ WebBrowser.maybeCompleteAuthSession();
 // Spotify OAuth Scopes für Playback
 const SCOPES = [
   'user-read-playback-state',
-  'user-modify-playback-state', 
+  'user-modify-playback-state',
   'user-read-currently-playing',
   'streaming',
   'app-remote-control'
@@ -39,7 +39,7 @@ class SpotifyPlaybackService {
   async isLoggedIn() {
     await this.initialize();
     if (!this.userAccessToken) return false;
-    
+
     // Prüfe ob Token abgelaufen
     if (this.tokenExpiry && Date.now() > this.tokenExpiry) {
       // Versuche Token zu refreshen
@@ -59,31 +59,20 @@ class SpotifyPlaybackService {
   // OAuth Login Flow
   async login() {
     await this.initialize();
-    
+
     if (!this.clientId) {
       throw new Error('Spotify Client ID nicht konfiguriert. Bitte in Einstellungen eingeben.');
     }
 
-    // Für Expo Go muss eine spezielle URI verwendet werden
-    const redirectUri = AuthSession.makeRedirectUri({
-      scheme: 'openster',
-      preferLocalhost: false,
-      isTripleSlashed: false,
-    });
+    // Feste Redirect URI die mit Spotify Dashboard übereinstimmt
+    const redirectUri = 'openster://callback';
 
     console.log('========================================');
     console.log('REDIRECT URI FÜR SPOTIFY DASHBOARD:');
     console.log(redirectUri);
     console.log('========================================');
-    
-    // Alert dem User die URI zeigen
-    Alert.alert(
-      'Redirect URI', 
-      `Füge diese URI im Spotify Dashboard hinzu:\n\n${redirectUri}`,
-      [{ text: 'Kopiert, weiter!' }]
-    );
 
-    const authUrl = 
+    const authUrl =
       `https://accounts.spotify.com/authorize?` +
       `client_id=${this.clientId}` +
       `&response_type=code` +
@@ -92,19 +81,19 @@ class SpotifyPlaybackService {
       `&show_dialog=true`;
 
     const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
-    
+
     console.log('Auth result:', result);
 
     if (result.type === 'success' && result.url) {
       const url = new URL(result.url);
       const code = url.searchParams.get('code');
-      
+
       if (code) {
         await this.exchangeCodeForToken(code, redirectUri);
         return true;
       }
     }
-    
+
     throw new Error('Login abgebrochen oder fehlgeschlagen');
   }
 
@@ -129,7 +118,7 @@ class SpotifyPlaybackService {
     );
 
     const { access_token, refresh_token, expires_in } = response.data;
-    
+
     this.userAccessToken = access_token;
     this.refreshToken = refresh_token;
     this.tokenExpiry = Date.now() + (expires_in * 1000);
@@ -168,10 +157,10 @@ class SpotifyPlaybackService {
     );
 
     const { access_token, expires_in, refresh_token } = response.data;
-    
+
     this.userAccessToken = access_token;
     this.tokenExpiry = Date.now() + (expires_in * 1000);
-    
+
     if (refresh_token) {
       this.refreshToken = refresh_token;
       await SecureStore.setItemAsync('spotifyRefreshToken', refresh_token);
@@ -186,7 +175,7 @@ class SpotifyPlaybackService {
     this.userAccessToken = null;
     this.refreshToken = null;
     this.tokenExpiry = null;
-    
+
     await SecureStore.deleteItemAsync('spotifyUserToken');
     await SecureStore.deleteItemAsync('spotifyRefreshToken');
     await AsyncStorage.removeItem('spotifyTokenExpiry');
@@ -225,7 +214,7 @@ class SpotifyPlaybackService {
         },
       }
     );
-    
+
     console.log('Playback zu Gerät transferiert:', deviceId);
   }
 
@@ -260,7 +249,7 @@ class SpotifyPlaybackService {
       uris: [`spotify:track:${trackId}`],
     };
 
-    const url = deviceId 
+    const url = deviceId
       ? `https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`
       : 'https://api.spotify.com/v1/me/player/play';
 
@@ -270,7 +259,7 @@ class SpotifyPlaybackService {
         'Content-Type': 'application/json',
       },
     });
-    
+
     console.log('Track wird abgespielt:', trackId);
     return true;
   }
@@ -281,7 +270,7 @@ class SpotifyPlaybackService {
       // Versuche zuerst spotify: URI (öffnet direkt in App)
       const spotifyUri = `spotify:track:${trackId}`;
       console.log('Öffne Track in Spotify App:', trackId);
-      
+
       try {
         await Linking.openURL(spotifyUri);
         return true;
@@ -327,21 +316,21 @@ class SpotifyPlaybackService {
 
     // Zuerst prüfen ob Geräte verfügbar sind
     let devices = await this.getDevices();
-    
+
     // Wenn keine Geräte, öffne Spotify App mit dem Track
     if (devices.length === 0) {
       console.log('Keine Geräte gefunden, öffne Spotify App mit Track...');
-      
+
       // Öffne den Track direkt in Spotify - das startet die Wiedergabe dort
       const opened = await this.playTrackInSpotifyApp(trackId);
-      
+
       if (opened) {
         // Gib Spotify Zeit sich zu initialisieren
         await new Promise(resolve => setTimeout(resolve, 2000));
-        
+
         // Versuche mehrmals Geräte zu finden
         devices = await this.waitForDevices(5, 1000);
-        
+
         // Wenn immer noch keine Geräte, ist der Track trotzdem in Spotify gestartet
         if (devices.length === 0) {
           console.log('Track läuft in Spotify App (kein API-Zugriff möglich)');
@@ -352,7 +341,7 @@ class SpotifyPlaybackService {
 
     // Wenn ein Gerät angegeben ist oder wir eins gefunden haben
     const targetDeviceId = deviceId || (devices.length > 0 ? devices[0].id : null);
-    
+
     if (targetDeviceId) {
       try {
         await this.transferPlayback(targetDeviceId, false);
@@ -446,7 +435,7 @@ class SpotifyPlaybackService {
   // Stelle sicher dass Token gültig ist
   async ensureValidToken() {
     await this.initialize();
-    
+
     if (!this.userAccessToken) {
       throw new Error('Nicht eingeloggt. Bitte zuerst mit Spotify verbinden.');
     }
