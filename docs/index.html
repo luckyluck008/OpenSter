@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OpenSter - Music Quiz App</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        --primary: #634e34;
+        --secondary: #ebc47c;
+        --background: #fcd385;
+        --card: #fdf8f1;
+        --text: #634e34;
+        --dark-bg: #121212;
+        --dark-card: #1e1e1e;
+        --dark-text: #ffffff;
+        --dark-secondary: #2c2c2c;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        background: var(--background);
+        color: var(--text);
+        line-height: 1.6;
+      }
+
+      .hero {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 2rem;
+        background: linear-gradient(135deg, var(--background) 0%, var(--secondary) 100%);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .hero::before {
+        content: '';
+        position: absolute;
+        width: 600px;
+        height: 600px;
+        background: radial-gradient(circle, rgba(99, 78, 52, 0.1) 0%, transparent 70%);
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        animation: pulse 4s ease-in-out infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          transform: translate(-50%, -50%) scale(1);
+        }
+        50% {
+          transform: translate(-50%, -50%) scale(1.1);
+        }
+      }
+
+      .logo-container {
+        position: relative;
+        z-index: 1;
+      }
+
+      .logo {
+        width: 180px;
+        height: 180px;
+        border-radius: 40px;
+        box-shadow: 0 20px 60px rgba(99, 78, 52, 0.3);
+        margin-bottom: 2rem;
+      }
+
+      h1 {
+        font-size: 4rem;
+        font-weight: 900;
+        margin-bottom: 1rem;
+        color: var(--primary);
+        letter-spacing: -2px;
+      }
+
+      .tagline {
+        font-size: 1.5rem;
+        color: var(--text);
+        opacity: 0.9;
+        margin-bottom: 2rem;
+        max-width: 600px;
+      }
+
+      .cta-buttons {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .btn {
+        padding: 1rem 2rem;
+        border-radius: 25px;
+        font-weight: 700;
+        font-size: 1rem;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .btn-primary {
+        background: var(--primary);
+        color: var(--card);
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(99, 78, 52, 0.4);
+      }
+
+      .btn-secondary {
+        background: var(--card);
+        color: var(--primary);
+      }
+
+      .btn-secondary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      }
+
+      section {
+        padding: 5rem 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .features {
+        background: var(--card);
+      }
+
+      h2 {
+        font-size: 2.5rem;
+        font-weight: 900;
+        text-align: center;
+        margin-bottom: 3rem;
+        color: var(--primary);
+      }
+
+      .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+      }
+
+      .feature-card {
+        background: var(--background);
+        padding: 2rem;
+        border-radius: 20px;
+        transition: transform 0.3s ease;
+      }
+
+      .feature-card:hover {
+        transform: translateY(-5px);
+      }
+
+      .feature-icon {
+        width: 60px;
+        height: 60px;
+        background: var(--primary);
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
+      }
+
+      .feature-card h3 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        color: var(--primary);
+      }
+
+      .feature-card p {
+        color: var(--text);
+        opacity: 0.8;
+      }
+
+      .tech-stack {
+        background: var(--dark-bg);
+        color: var(--dark-text);
+      }
+
+      .tech-stack h2 {
+        color: var(--secondary);
+      }
+
+      .tech-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1.5rem;
+        justify-items: center;
+      }
+
+      .tech-item {
+        text-align: center;
+        padding: 1.5rem;
+        background: var(--dark-card);
+        border-radius: 15px;
+        width: 100%;
+        max-width: 180px;
+        transition: transform 0.3s ease;
+      }
+
+      .tech-item:hover {
+        transform: scale(1.05);
+      }
+
+      .tech-icon {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .tech-item h4 {
+        font-size: 1rem;
+        font-weight: 600;
+      }
+
+      .screenshots {
+        background: var(--secondary);
+      }
+
+      .screenshot-container {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        flex-wrap: wrap;
+      }
+
+      .phone-mockup {
+        width: 280px;
+        height: 560px;
+        background: var(--dark-bg);
+        border-radius: 40px;
+        padding: 10px;
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+        position: relative;
+      }
+
+      .phone-screen {
+        width: 100%;
+        height: 100%;
+        background: var(--background);
+        border-radius: 30px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .phone-screen-content {
+        text-align: center;
+        padding: 2rem;
+      }
+
+      .mock-ring {
+        width: 150px;
+        height: 150px;
+        border: 4px solid var(--primary);
+        border-radius: 50%;
+        margin-bottom: 2rem;
+        animation: ring-pulse 2s ease-in-out infinite;
+      }
+
+      @keyframes ring-pulse {
+        0%,
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+        50% {
+          transform: scale(1.05);
+          opacity: 0.8;
+        }
+      }
+
+      .mock-buttons {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+      }
+
+      .mock-btn {
+        width: 60px;
+        height: 60px;
+        border-radius: 20px;
+        background: var(--primary);
+      }
+
+      .mock-btn.secondary {
+        background: var(--secondary);
+      }
+
+      .getting-started {
+        background: var(--card);
+      }
+
+      .steps {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+      }
+
+      .step {
+        text-align: center;
+        padding: 2rem;
+      }
+
+      .step-number {
+        width: 50px;
+        height: 50px;
+        background: var(--primary);
+        color: var(--card);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: 900;
+        margin: 0 auto 1rem;
+      }
+
+      .step h3 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--primary);
+        margin-bottom: 0.5rem;
+      }
+
+      code {
+        background: var(--dark-bg);
+        color: var(--secondary);
+        padding: 0.25rem 0.5rem;
+        border-radius: 5px;
+        font-family: 'SF Mono', Monaco, monospace;
+        font-size: 0.9rem;
+      }
+
+      .code-block {
+        background: var(--dark-bg);
+        color: var(--dark-text);
+        padding: 1.5rem;
+        border-radius: 15px;
+        overflow-x: auto;
+        margin-top: 1rem;
+        text-align: left;
+      }
+
+      .code-block code {
+        background: transparent;
+        color: var(--secondary);
+      }
+
+      footer {
+        background: var(--dark-bg);
+        color: var(--dark-text);
+        text-align: center;
+        padding: 3rem 2rem;
+      }
+
+      footer a {
+        color: var(--secondary);
+        text-decoration: none;
+      }
+
+      footer a:hover {
+        text-decoration: underline;
+      }
+
+      .footer-links {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+      }
+
+      @media (max-width: 768px) {
+        h1 {
+          font-size: 2.5rem;
+        }
+
+        .tagline {
+          font-size: 1.2rem;
+        }
+
+        h2 {
+          font-size: 2rem;
+        }
+
+        .phone-mockup {
+          width: 240px;
+          height: 480px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <section class="hero">
+      <div class="logo-container">
+        <img src="assets/icon.png" alt="OpenSter Logo" class="logo" />
+        <h1>OpenSter</h1>
+        <p class="tagline">
+          Die Open-Source App fur Musik-Quiz-Enthusiasten. Scan QR-Codes, erstelle Quiz-Kartensets
+          und teste dein Wissen uber Musikgeschichte.
+        </p>
+        <div class="cta-buttons">
+          <a href="https://github.com/grunz/OpenSter" class="btn btn-primary">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"
+              />
+            </svg>
+            GitHub
+          </a>
+          <a href="#features" class="btn btn-secondary">Mehr erfahren</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="features" id="features">
+      <h2>Features</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">📷</div>
+          <h3>QR-Code Scanner</h3>
+          <p>Scanne Spotify QR-Codes direkt von Plattenhullen, um Songs sofort abzuspielen.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🎵</div>
+          <h3>Spotify Integration</h3>
+          <p>
+            Volle Integration mit Spotify Web API fur nahtlose Wiedergabe und Playlist-Verwaltung.
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🎴</div>
+          <h3>Quiz-Kartensets</h3>
+          <p>Erstelle PDF-Quizkarten aus Playlists fur das ultimative Musik-Ratespiel.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🎨</div>
+          <h3>Theme-System</h3>
+          <p>Dark & Light Mode mit anpassbaren Akzentfarben, gespeichert in AsyncStorage.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📱</div>
+          <h3>Cross-Platform</h3>
+          <p>React Native mit Expo - lauft auf iOS, Android und im Web.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔒</div>
+          <h3>Open Source</h3>
+          <p>100% Open Source unter MIT-Lizenz. Trage bei oder forke das Projekt!</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="tech-stack">
+      <h2>Tech Stack</h2>
+      <div class="tech-grid">
+        <div class="tech-item">
+          <div class="tech-icon">⚛️</div>
+          <h4>React Native</h4>
+        </div>
+        <div class="tech-item">
+          <div class="tech-icon">📲</div>
+          <h4>Expo</h4>
+        </div>
+        <div class="tech-item">
+          <div class="tech-icon">🔷</div>
+          <h4>TypeScript</h4>
+        </div>
+        <div class="tech-item">
+          <div class="tech-icon">🧭</div>
+          <h4>React Navigation</h4>
+        </div>
+        <div class="tech-item">
+          <div class="tech-icon">💨</div>
+          <h4>NativeWind</h4>
+        </div>
+        <div class="tech-item">
+          <div class="tech-icon">🎵</div>
+          <h4>Spotify API</h4>
+        </div>
+      </div>
+    </section>
+
+    <section class="screenshots">
+      <h2>App-Vorschau</h2>
+      <div class="screenshot-container">
+        <div class="phone-mockup">
+          <div class="phone-screen">
+            <div class="phone-screen-content">
+              <div class="mock-ring"></div>
+              <div class="mock-buttons">
+                <div class="mock-btn secondary"></div>
+                <div class="mock-btn"></div>
+                <div class="mock-btn secondary"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="getting-started">
+      <h2>Loslegen</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <h3>Repository klonen</h3>
+          <div class="code-block">
+            <code>git clone https://github.com/grunz/OpenSter.git<br />cd OpenSter</code>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <h3>Abhangigkeiten installieren</h3>
+          <div class="code-block">
+            <code>npm install</code>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <h3>Entwicklung starten</h3>
+          <div class="code-block">
+            <code>npm start</code>
+          </div>
+        </div>
+      </div>
+      <div style="text-align: center; margin-top: 3rem; color: var(--text); opacity: 0.8">
+        <p>
+          Erfordert einen Spotify Developer Account. Konfiguriere Client ID und Secret in den
+          Einstellungen.
+        </p>
+      </div>
+    </section>
+
+    <footer>
+      <div class="footer-links">
+        <a href="https://github.com/grunz/OpenSter">GitHub</a>
+        <a href="https://github.com/grunz/OpenSter/issues">Issues</a>
+        <a href="https://github.com/grunz/OpenSter/blob/main/LICENSE">MIT Lizenz</a>
+      </div>
+      <p>&copy; 2025 OpenSter. Open Source unter MIT-Lizenz.</p>
+    </footer>
+  </body>
+</html>
