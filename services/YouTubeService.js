@@ -229,14 +229,28 @@ class YouTubeService {
   extractYearFromTitle(title) {
     if (!title) return null;
     
-    // Suche nach (YYYY) oder [YYYY] oder einfach 4-stellige Jahreszahlen
-    const match = title.match(/\((\d{4})\)|\[(\d{4})\]|(\d{4})/);
-    if (match) {
-      const year = parseInt(match[1] || match[2] || match[3]);
-      if (year >= 1950 && year <= new Date().getFullYear()) {
-        return year;
+    // Suche nach verschiedenen Jahresformaten: (YYYY), [YYYY], - YYYY, /YYYY, YYYY-
+    const patterns = [
+      /\((\d{4})\)/,   // (2023)
+      /\[(\d{4})\]/,   // [2023]
+      /-\s*(\d{4})/,   // - 2023
+      /(\d{4})-/,      // 2023-
+      /\/(\d{4})/,     // /2023
+      /(\d{4})\//,     // 2023/
+      /\b(\d{4})\b/    // Einfache 4-stellige Zahl
+    ];
+    
+    for (const pattern of patterns) {
+      const match = title.match(pattern);
+      if (match) {
+        const year = parseInt(match[1]);
+        const currentYear = new Date().getFullYear();
+        if (year >= 1950 && year <= currentYear) {
+          return year;
+        }
       }
     }
+    
     return null;
   }
 
