@@ -37,18 +37,44 @@ const escapeHtml = (text) => {
 // Generiere komplettes PDF mit Vorder- und Rückseiten
 export const generateCardsPDF = async (tracks) => {
   try {
-    // Generiere QR-Codes sequentiell für jeden Track (mit eindeutiger URL)
-    const qrCodes = [];
-    for (let i = 0; i < tracks.length; i++) {
-      const track = tracks[i];
-      const spotifyUrl = `https://open.spotify.com/track/${track.id}`;
-      console.log(`Generiere QR für Track ${i}: ${track.name} - ${spotifyUrl}`);
-      const qr = await generateQRSVG(spotifyUrl);
-      qrCodes.push(qr);
-    }
+    // Unterstützung für verschiedene Track-Formate
+    const normalizedTracks = tracks.map(track => {
+      // YouTube Format
+      if (track.youtubeId || track.type === 'youtube' || (track.id && track.id.length === 11)) {
+        const videoId = track.youtubeId || track.id;
+        return {
+          ...track,
+          id: videoId,
+          name: track.name || track.title,
+          artist: track.artist || 'YouTube',
+          originalYear: track.originalYear || track.year,
+          qrUrl: `https://youtube.com/watch?v=${videoId}`,
+          type: 'youtube'
+        };
+      }
+      // Legacy Spotify Format (falls noch vorhanden)
+      if (track.spotifyId || (track.id && track.id.length === 22)) {
+        return {
+          ...track,
+          qrUrl: `https://open.spotify.com/track/${track.id}`,
+          type: 'spotify'
+        };
+      }
+      // Fallback
+      return {
+        ...track,
+        qrUrl: `https://youtube.com/watch?v=${track.id}`,
+        type: 'youtube'
+      };
+    });
+
+    // Generiere QR-Codes parallel für alle Tracks
+    const qrCodes = await Promise.all(
+      normalizedTracks.map(track => generateQRSVG(track.qrUrl))
+    );
 
     const tracksPerPage = 12;
-    const totalPages = Math.ceil(tracks.length / tracksPerPage);
+    const totalPages = Math.ceil(normalizedTracks.length / tracksPerPage);
     
     let html = `
     <!DOCTYPE html>
@@ -155,6 +181,10 @@ export const generateCardsPDF = async (tracks) => {
           color: #8a2be2;
           margin-top: 2mm;
         }
+        .platform-icon {
+          font-size: 12pt;
+          margin-bottom: 1mm;
+        }
         .grid-back {
           direction: rtl;
         }
@@ -169,7 +199,7 @@ export const generateCardsPDF = async (tracks) => {
     // Generiere Seiten: immer Vorderseite, dann Rückseite
     for (let pageNum = 0; pageNum < totalPages; pageNum++) {
       const startIdx = pageNum * tracksPerPage;
-      const pageTracks = tracks.slice(startIdx, startIdx + tracksPerPage);
+      const pageTracks = normalizedTracks.slice(startIdx, startIdx + tracksPerPage);
       const pageQRs = qrCodes.slice(startIdx, startIdx + tracksPerPage);
       
       // === VORDERSEITE (Lösung) ===
@@ -179,9 +209,9 @@ export const generateCardsPDF = async (tracks) => {
       for (let j = 0; j < tracksPerPage; j++) {
         if (j < pageTracks.length) {
           const track = pageTracks[j];
-          const year = track.originalYear || '????';
-          const title = track.name || 'Unbekannt';
-          const artist = track.artist || 'Unbekannt';
+          const year = track.originalYear || track.year || '????';
+          const title = track.name || track.title || 'Unbekannt';
+          const artist = track.artist || 'YouTube';
           
           html += `
           <div class="card-front">
@@ -205,12 +235,14 @@ export const generateCardsPDF = async (tracks) => {
         if (j < pageTracks.length) {
           const track = pageTracks[j];
           const qrSvg = pageQRs[j];
+          const platformIcon = track.type === 'youtube' ? '▶️' : '🎵';
           
           html += `
           <div class="card-back">
+            <div class="platform-icon">${platformIcon}</div>
             <div class="qr-container">${qrSvg || '<div style="width:25mm;height:25mm;background:#eee;border-radius:2mm;"></div>'}</div>
             <div class="track-id">${track.id || ''}</div>
-            <div class="logo">🎵 OpenSter</div>
+            <div class="logo">OpenSter</div>
           </div>
           `;
         } else {
